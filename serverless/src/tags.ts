@@ -1,4 +1,4 @@
-import { LambdaFunction } from "./layer";
+import {LambdaFunction, ServerlessResource} from "./layer";
 
 const SERVICE = "service";
 const ENV = "env";
@@ -6,12 +6,12 @@ const MACRO_VERSION = "dd_sls_macro";
 // Following the same pattern from SAM
 const MACRO_BY = "dd_sls_macro_by";
 
-export function addServiceAndEnvTags(lambdas: LambdaFunction[], service: string | undefined, env: string | undefined) {
+export function addServiceAndEnvTags(resources: ServerlessResource[], service: string | undefined, env: string | undefined) {
   // Add the tag for each function, unless a 'service' or 'env' tag already exists.
-  lambdas.forEach((lambda) => {
+  resources.forEach((resource) => {
     let functionServiceTagExists = false;
     let functionEnvTagExists = false;
-    const tags = lambda.properties.Tags ?? [];
+    const tags = resource.properties.Tags ?? [];
 
     for (const tag of tags) {
       if (tag.Key === SERVICE) {
@@ -30,7 +30,7 @@ export function addServiceAndEnvTags(lambdas: LambdaFunction[], service: string 
     }
 
     if (tags.length > 0) {
-      lambda.properties.Tags = tags;
+      resource.properties.Tags = tags;
     }
   });
 }

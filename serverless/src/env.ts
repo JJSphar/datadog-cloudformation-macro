@@ -28,6 +28,8 @@ export interface Configuration {
   enableXrayTracing: boolean;
   // Enable tracing on Lambda function using dd-trace, datadog's APM library.
   enableDDTracing: boolean;
+  // Indicate that parent Xray traces should be merged with dd-trace traces.
+  mergeXrayTraces: boolean;
   // Enable log collection via the Datadog Lambda extension
   enableDDLogs: boolean;
   // When set, the macro will subscribe the lambdas to the forwarder with the given arn.
@@ -61,6 +63,7 @@ const enableDDLogsEnvVar = "DD_SERVERLESS_LOGS_ENABLED";
 const DATADOG = "Datadog";
 const PARAMETERS = "Parameters";
 const captureLambdaPayloadEnvVar = "DD_CAPTURE_LAMBDA_PAYLOAD";
+const mergeXrayTracesEnvVar = "DD_MERGE_XRAY_TRACES"
 
 export const defaultConfiguration: Configuration = {
   addLayers: true,
@@ -70,6 +73,7 @@ export const defaultConfiguration: Configuration = {
   enableXrayTracing: false,
   enableDDTracing: true,
   enableDDLogs: true,
+  mergeXrayTraces: true,
   enableEnhancedMetrics: true,
   captureLambdaPayload: false,
 };
@@ -205,6 +209,10 @@ export function setEnvConfiguration(config: Configuration, lambdas: LambdaFuncti
 
     if (config.captureLambdaPayload !== undefined && envVariables[captureLambdaPayloadEnvVar] === undefined) {
       envVariables[captureLambdaPayloadEnvVar] = config.captureLambdaPayload;
+    }
+
+    if (config.mergeXrayTraces !== undefined && envVariables[mergeXrayTracesEnvVar] === undefined) {
+      envVariables[mergeXrayTracesEnvVar] = config.mergeXrayTraces;
     }
 
     environment.Variables = envVariables;

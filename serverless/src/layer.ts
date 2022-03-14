@@ -1,7 +1,8 @@
-import { FunctionProperties, Resources, Parameters } from "./index";
+import {FunctionProperties, Resources, Parameters, ServerlessProperties} from "./index";
 import log from "loglevel";
 
 const LAMBDA_FUNCTION_RESOURCE_TYPE = "AWS::Lambda::Function";
+const SERVERLESS_RESOURCE_TYPES = ["AWS::StepFunctions::StateMachine"]
 export const DD_ACCOUNT_ID = "464622532012";
 export const DD_GOV_ACCOUNT_ID = "002406178527";
 
@@ -25,6 +26,13 @@ export interface LambdaFunction {
   runtime: string;
   architectureType: ArchitectureType;
   architecture: string;
+}
+
+// Represents any resource that has a "Tags" property, which should have 'service' and 'env' added.
+// Superset of the LambdaFunction interface
+export interface ServerlessResource {
+  key: string;
+  properties: ServerlessProperties
 }
 
 const architectureLookup: { [key: string]: ArchitectureType } = {
@@ -120,6 +128,29 @@ export function findLambdas(resources: Resources, templateParameterValues: Param
     })
     .filter((lambda) => lambda !== undefined) as LambdaFunction[];
 }
+
+/**
+ * Parse through the Resources section of the provided CloudFormation template to find various serverless resources.
+ * The list of resources can be used to apply env and service parameters.
+ */
+export function findServerlessResources(resources: Resources) {
+  return Object.entries(resources)
+    .map(([key, resource]) => {
+      if (!(resource.Type in SERVERLESS_RESOURCE_TYPES)) {
+        log.debug(`Resource ${key} is not a Serverless resource type, skipping...`);
+        return;
+      }
+
+      const properties = resource.Properties;
+
+      return {
+        key,
+        properties,
+      } as ServerlessResource;
+    })
+    .filter((res) => res !== undefined) as ServerlessResource[];
+}
+
 
 function useOrRef(value: undefined | string | { Ref: any }, templateParameterValues: Parameters): undefined | string {
   if (!value) return undefined;

@@ -1,5 +1,5 @@
 import { getConfigFromCfnMappings, getConfigFromCfnParams, setEnvConfiguration, validateParameters } from "./env";
-import { findLambdas, applyLayers, LambdaFunction } from "./layer";
+import {findLambdas, applyLayers, LambdaFunction, findServerlessResources} from "./layer";
 import { getTracingMode, enableTracing, MissingIamRoleError, TracingMode } from "./tracing";
 import { addServiceAndEnvTags, addMacroTag, addCDKTag, addSAMTag } from "./tags";
 import { redirectHandlers } from "./redirect";
@@ -35,17 +35,21 @@ export interface InputEvent {
   templateParameterValues: Parameters;
 }
 
-export interface FunctionProperties {
+export interface FunctionProperties extends ServerlessProperties {
   Handler: string;
   Runtime: string;
   Role: string | { [func: string]: string[] };
   Code: any;
   Environment?: { Variables?: { [key: string]: string | boolean } };
-  Tags?: { Value: string; Key: string }[];
   Layers?: string[];
   TracingConfig?: { [key: string]: string };
   FunctionName?: string;
   Architectures?: [string];
+}
+
+// Splits-out the "Tags" portion of a resources Properties mapping
+export interface ServerlessProperties {
+  Tags?: { Value: string; Key: string }[];
 }
 
 export const handler = async (event: InputEvent, _: any) => {
@@ -81,6 +85,9 @@ export const handler = async (event: InputEvent, _: any) => {
 
     const lambdas = findLambdas(resources, event.templateParameterValues);
     log.debug(`Lambda resources found: ${JSON.stringify(lambdas)}`);
+
+    const serverlessRes = findServerlessResources(resources);
+    log.debug(`Other serverless resources found: ${JSON.stringify(serverlessRes)}`);
 
     log.debug("Setting environment variables for Lambda function resources");
     setEnvConfiguration(config, lambdas);
@@ -151,6 +158,7 @@ export const handler = async (event: InputEvent, _: any) => {
     if (config.service || config.env) {
       log.debug("Adding service & env tags...");
       addServiceAndEnvTags(lambdas, config.service, config.env);
+      addServiceAndEnvTags(serverlessRes, config.service, config.env);
     }
 
     log.debug("Adding macro version tag...");
