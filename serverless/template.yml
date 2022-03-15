@@ -16,40 +16,39 @@ Parameters:
     Type: String
     Description: Version of the macro to publish
 
-Conditions:
-  SetFunctionName:
-    Fn::Not:
-      - Fn::Equals:
-          - Ref: FunctionName
-          - "DatadogServerlessMacroLambda"
-
 Resources:
   MacroFunction:
     Type: AWS::Serverless::Function
-    DependsOn: MacroFunctionZip
     Properties:
-      FunctionName:
-        Fn::If:
-          - SetFunctionName
-          - Ref: FunctionName
-          - Ref: AWS::NoValue
+      FunctionName: !Ref FunctionName
       Description: Processes a CloudFormation template to install Datadog Lambda layers for Python and Node.js Lambda functions.
-      Handler: src/index.handler
-      Runtime: nodejs12.x
+      Handler: index.handler
+      Runtime: nodejs14.x
+      Timeout: 10
       CodeUri: .
       Tags:
         dd_serverless_macro_version: !Ref VerionNumber
+        service: datadog-macro
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: False
+        Target: es2020
+        Sourcemap: true
+        EntryPoints:
+          - src/index.ts
+
 
   MacroFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName:
-        Fn::Sub: /aws/lambda/${MacroFunction}
+        Fn::Sub: /aws/lambda/${FunctionName}
       RetentionInDays:
         Ref: LogRetentionInDays
 
   Macro:
     Type: AWS::CloudFormation::Macro
     Properties:
-      Name: DatadogServerlessCustom
+      Name: DatadogServerless-custom
       FunctionName: !GetAtt MacroFunction.Arn

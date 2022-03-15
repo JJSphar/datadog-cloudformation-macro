@@ -57,6 +57,8 @@ export const handler = async (event: InputEvent, _: any) => {
     /* TODO: set loglevel here using config or env var */
     log.setLevel("debug");
 
+    log.info(JSON.stringify(event))
+
     const region = event.region;
     const fragment = event.fragment;
     const resources = fragment.Resources;

@@ -136,7 +136,7 @@ export function findLambdas(resources: Resources, templateParameterValues: Param
 export function findServerlessResources(resources: Resources) {
   return Object.entries(resources)
     .map(([key, resource]) => {
-      if (!(resource.Type in SERVERLESS_RESOURCE_TYPES)) {
+      if (!SERVERLESS_RESOURCE_TYPES.includes(resource.Type)) {
         log.debug(`Resource ${key} is not a Serverless resource type, skipping...`);
         return;
       }
